@@ -50,7 +50,7 @@ class DetectionEngine:
             str(event.get("process_name") or ""),
             str(event.get("user_agent") or ""),
             str(event.get("domain") or "")
-        ])
+        ])[:8192]  # Clamped to prevent ReDoS CPU exhaustion
 
         # 1. SQL Injection
         matched_sql = [p.pattern for p in self.sql_patterns if p.search(raw_target)]

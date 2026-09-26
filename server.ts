@@ -10,10 +10,18 @@ import { generateId } from './server/idGenerator';
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-app.use(express.json());
+// Security: Disable Express fingerprinting and bound JSON payload size
+app.disable('x-powered-by');
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Enable CORS for all API calls
+// Security Headers & CORS
 app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -41,8 +49,9 @@ app.get('/api/dashboard/summary', (req: Request, res: Response) => {
 
 // 3. Events
 app.get('/api/events', (req: Request, res: Response) => {
-  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
-  const search = req.query.search ? (req.query.search as string).toLowerCase() : '';
+  const parsedLimit = parseInt(req.query.limit as string, 10);
+  const limit = isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 200);
+  const search = req.query.search ? (req.query.search as string).toLowerCase().slice(0, 128) : '';
   let filtered = db.events;
   if (search) {
     filtered = filtered.filter(e => 
@@ -65,7 +74,8 @@ app.post('/api/events', (req: Request, res: Response) => {
 app.get('/api/alerts', (req: Request, res: Response) => {
   const severity = req.query.severity as string;
   const status = req.query.status as string;
-  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+  const parsedLimit = parseInt(req.query.limit as string, 10);
+  const limit = isNaN(parsedLimit) ? 100 : Math.min(Math.max(parsedLimit, 1), 200);
 
   let results = db.alerts;
   if (severity && severity !== 'ALL') {
@@ -139,19 +149,32 @@ app.get('/api/iocs', (req: Request, res: Response) => {
 
 app.post('/api/iocs', (req: Request, res: Response) => {
   const { ioc, type, threat_level, source, confidence, description, tags } = req.body;
-  if (!ioc || !type) {
-    return res.status(400).json({ error: 'ioc and type are required' });
+  if (!ioc || typeof ioc !== 'string' || ioc.trim().length === 0 || ioc.length > 255) {
+    return res.status(400).json({ error: 'Valid ioc string required (1-255 characters)' });
   }
+
+  const validTypes = ['IP', 'DOMAIN', 'URL', 'HASH', 'EMAIL'];
+  if (!type || !validTypes.includes(type)) {
+    return res.status(400).json({ error: `Type must be one of: ${validTypes.join(', ')}` });
+  }
+
+  const validThreatLevels = ['low', 'medium', 'high', 'critical'];
+  const threatLevel = validThreatLevels.includes(threat_level) ? threat_level : 'high';
+  const conf = typeof confidence === 'number' && confidence >= 0 && confidence <= 100 ? confidence : 90;
+  const sanitizedSource = typeof source === 'string' ? source.slice(0, 128) : 'Custom SOC Input';
+  const sanitizedDesc = typeof description === 'string' ? description.slice(0, 500) : 'Manually cataloged IOC';
+  const sanitizedTags = Array.isArray(tags) ? tags.map(t => String(t).slice(0, 32)).slice(0, 10) : ['Custom'];
+
   const newIoc = {
     id: generateId('ioc'),
-    ioc,
+    ioc: ioc.trim(),
     type,
-    threat_level: threat_level || 'high',
-    source: source || 'Custom SOC Input',
-    confidence: confidence || 90,
+    threat_level: threatLevel as any,
+    source: sanitizedSource,
+    confidence: conf,
     last_seen: new Date().toISOString(),
-    tags: tags || ['Custom'],
-    description: description || 'Manually cataloged IOC'
+    tags: sanitizedTags,
+    description: sanitizedDesc
   };
   db.iocs.unshift(newIoc);
   res.status(201).json(newIoc);
@@ -182,22 +205,24 @@ app.get('/api/responses/audit', (req: Request, res: Response) => {
 
 app.post('/api/responses/block-ip', (req: Request, res: Response) => {
   const { ip, reason } = req.body;
-  if (!ip) {
-    return res.status(400).json({ error: 'IP address is required' });
+  if (!ip || typeof ip !== 'string' || ip.length > 64 || !/^[\d\.\:a-fA-F\/]+$/.test(ip.trim())) {
+    return res.status(400).json({ error: 'Valid IP address required (IPv4/IPv6)' });
   }
-  const audit = responseEngine.executeManualAction('BLOCK_IP', ip, reason || 'Manual SOC IP isolation block', 'SOC-ANALYST');
+  const cleanReason = typeof reason === 'string' ? reason.slice(0, 255) : 'Manual SOC IP isolation block';
+  const audit = responseEngine.executeManualAction('BLOCK_IP', ip.trim(), cleanReason, 'SOC-ANALYST');
   broadcast('AUDIT_CREATED', { audit, summary: db.getSummary() });
-  res.json({ message: `Successfully simulated IP block for ${ip}`, audit });
+  res.json({ message: `Successfully simulated IP block for ${ip.trim()}`, audit });
 });
 
 app.post('/api/responses/isolate-host', (req: Request, res: Response) => {
   const { hostname, reason } = req.body;
-  if (!hostname) {
-    return res.status(400).json({ error: 'Hostname is required' });
+  if (!hostname || typeof hostname !== 'string' || hostname.length > 128 || !/^[\w\.\-]+$/.test(hostname.trim())) {
+    return res.status(400).json({ error: 'Valid hostname format required' });
   }
-  const audit = responseEngine.executeManualAction('ISOLATE_HOST', hostname, reason || 'Manual SOC host quarantine isolation', 'SOC-ANALYST');
+  const cleanReason = typeof reason === 'string' ? reason.slice(0, 255) : 'Manual SOC host quarantine isolation';
+  const audit = responseEngine.executeManualAction('ISOLATE_HOST', hostname.trim(), cleanReason, 'SOC-ANALYST');
   broadcast('AUDIT_CREATED', { audit, summary: db.getSummary() });
-  res.json({ message: `Successfully simulated host isolation for ${hostname}`, audit });
+  res.json({ message: `Successfully simulated host isolation for ${hostname.trim()}`, audit });
 });
 
 // 9. Attack Simulator Endpoints

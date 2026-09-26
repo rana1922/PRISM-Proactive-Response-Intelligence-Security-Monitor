@@ -60,7 +60,7 @@ export class DetectionEngine {
       event.process_name || '',
       event.user_agent || '',
       event.domain || ''
-    ].join(' ');
+    ].join(' ').slice(0, 8192); // Bounded length to prevent ReDoS CPU exhaustion
 
     // 1. Check SQL Injection Rule
     const sqlRule = db.detectionRules.find(r => r.rule_id === 'PRISM-SQL-001' && r.enabled);

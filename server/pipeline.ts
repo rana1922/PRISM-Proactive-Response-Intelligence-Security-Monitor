@@ -71,11 +71,8 @@ export class SecurityPipeline {
       domain: rawEvent.domain
     };
 
-    // Store in historical events
-    db.events.unshift(normalizedEvent);
-    if (db.events.length > 500) {
-      db.events.pop();
-    }
+    // Store in historical events (bounded to prevent memory leakage)
+    db.addEvent(normalizedEvent);
 
     const trace: PipelineResult['simulation_trace'] = [
       {
@@ -193,10 +190,7 @@ export class SecurityPipeline {
       alertRecord.incident_id = decision.incident_record.incident_id;
     }
 
-    db.alerts.unshift(alertRecord);
-    if (db.alerts.length > 200) {
-      db.alerts.pop();
-    }
+    db.addAlert(alertRecord);
 
     trace.push({
       step: 6,

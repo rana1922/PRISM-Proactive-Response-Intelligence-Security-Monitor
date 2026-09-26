@@ -665,6 +665,26 @@ class PrismDatabase {
     }
   }
 
+  public addEvent(event: SecurityEvent) {
+    this.events.unshift(event);
+    if (this.events.length > 500) this.events.pop();
+  }
+
+  public addAlert(alert: AlertRecord) {
+    this.alerts.unshift(alert);
+    if (this.alerts.length > 300) this.alerts.pop();
+  }
+
+  public addIncident(incident: IncidentRecord) {
+    this.incidents.unshift(incident);
+    if (this.incidents.length > 200) this.incidents.pop();
+  }
+
+  public addAudit(audit: ResponseAuditRecord) {
+    this.responseAudits.unshift(audit);
+    if (this.responseAudits.length > 300) this.responseAudits.pop();
+  }
+
   public getSummary(): DashboardSummary {
     const totalEvents = this.events.length;
     const activeThreats = this.alerts.filter(a => a.status === 'NEW' || a.status === 'INVESTIGATING').length;

@@ -77,7 +77,7 @@ export class ResponseEngine {
       };
 
       audits.push(audit);
-      db.responseAudits.unshift(audit);
+      db.addAudit(audit);
     }
 
     // Create Incident Record if required
@@ -100,7 +100,7 @@ export class ResponseEngine {
         why_detected: scoreFactors.reasons
       };
 
-      db.incidents.unshift(incidentRecord);
+      db.addIncident(incidentRecord);
     }
 
     return {
@@ -140,7 +140,7 @@ export class ResponseEngine {
       }
     };
 
-    db.responseAudits.unshift(audit);
+    db.addAudit(audit);
     return audit;
   }
 }
