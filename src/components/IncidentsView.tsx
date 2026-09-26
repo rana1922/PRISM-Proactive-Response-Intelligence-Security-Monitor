@@ -105,9 +105,9 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   </td>
                 </tr>
               ) : (
-                incidents.map(inc => (
+                incidents.map((inc, idx) => (
                   <tr
-                    key={inc.incident_id}
+                    key={`${inc.incident_id}-${idx}`}
                     onClick={() => handleOpenIncident(inc)}
                     className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
                   >

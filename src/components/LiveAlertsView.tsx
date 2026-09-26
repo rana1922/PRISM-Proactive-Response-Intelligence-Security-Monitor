@@ -102,17 +102,24 @@ export const LiveAlertsView: React.FC<LiveAlertsViewProps> = ({
     }
   };
 
-  const filteredAlerts = alerts.filter(a => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const match = a.source_ip.toLowerCase().includes(q) ||
-                    a.hostname.toLowerCase().includes(q) ||
-                    a.attack_type.toLowerCase().includes(q) ||
-                    a.alert_id.toLowerCase().includes(q);
-      if (!match) return false;
-    }
-    return true;
-  });
+  const seenAlertIds = new Set<string>();
+  const uniqueFilteredAlerts = alerts
+    .filter(a => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const match = a.source_ip.toLowerCase().includes(q) ||
+                      a.hostname.toLowerCase().includes(q) ||
+                      a.attack_type.toLowerCase().includes(q) ||
+                      a.alert_id.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    })
+    .filter(a => {
+      if (seenAlertIds.has(a.alert_id)) return false;
+      seenAlertIds.add(a.alert_id);
+      return true;
+    });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -125,7 +132,7 @@ export const LiveAlertsView: React.FC<LiveAlertsViewProps> = ({
               Live SOC Alert Feed
             </h1>
             <span className="font-mono text-xs text-slate-400">
-              ({filteredAlerts.length} events active)
+              ({uniqueFilteredAlerts.length} events active)
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -235,16 +242,16 @@ export const LiveAlertsView: React.FC<LiveAlertsViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filteredAlerts.length === 0 ? (
+              {uniqueFilteredAlerts.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-500 text-xs">
                     No security alerts found matching the current filter criteria.
                   </td>
                 </tr>
               ) : (
-                filteredAlerts.map(alert => (
+                uniqueFilteredAlerts.map((alert, idx) => (
                   <tr
-                    key={alert.alert_id}
+                    key={`${alert.alert_id}-${idx}`}
                     onClick={() => onViewAlertDetail(alert)}
                     className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
                   >

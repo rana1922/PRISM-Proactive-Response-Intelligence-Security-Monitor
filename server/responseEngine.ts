@@ -7,6 +7,7 @@ import {
   SecurityEvent
 } from './types';
 import { db } from './db';
+import { generateId } from './idGenerator';
 
 export interface ResponseDecision {
   recommended_actions: ResponseActionType[];
@@ -59,7 +60,7 @@ export class ResponseEngine {
       if (action === 'KILL_PROCESS') target = event.process_name || 'suspicious_proc';
 
       const audit: ResponseAuditRecord = {
-        id: `aud-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+        id: generateId('aud'),
         timestamp: new Date().toISOString(),
         actor: 'PRISM-AUTO',
         action,
@@ -81,7 +82,7 @@ export class ResponseEngine {
 
     // Create Incident Record if required
     if (shouldCreateIncident) {
-      const incId = `inc-${Date.now().toString().slice(-4)}`;
+      const incId = generateId('inc');
       incidentRecord = {
         incident_id: incId,
         alert_id: alert.alert_id,
@@ -124,7 +125,7 @@ export class ResponseEngine {
     }
 
     const audit: ResponseAuditRecord = {
-      id: `aud-manual-${Date.now().toString(36)}`,
+      id: generateId('aud-manual'),
       timestamp: new Date().toISOString(),
       actor,
       action,

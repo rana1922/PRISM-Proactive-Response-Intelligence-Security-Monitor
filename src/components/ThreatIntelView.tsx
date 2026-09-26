@@ -144,8 +144,8 @@ export const ThreatIntelView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filteredIocs.map(item => (
-                <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+              {filteredIocs.map((item, idx) => (
+                <tr key={`${item.id}-${idx}`} className="hover:bg-slate-800/30 transition-colors">
                   <td className="py-3 px-4 font-semibold text-rose-400 max-w-xs break-all">
                     {item.ioc}
                   </td>

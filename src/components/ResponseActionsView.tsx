@@ -181,8 +181,8 @@ export const ResponseActionsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {audits.map(item => (
-                <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+              {audits.map((item, idx) => (
+                <tr key={`${item.id}-${idx}`} className="hover:bg-slate-800/30 transition-colors">
                   <td className="py-3 px-4 text-slate-400 tabular-nums">
                     {new Date(item.timestamp).toLocaleTimeString()}
                   </td>

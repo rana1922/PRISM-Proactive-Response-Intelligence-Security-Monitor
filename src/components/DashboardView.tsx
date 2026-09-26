@@ -348,9 +348,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-2.5">
-            {recentAlerts.map(alert => (
+            {recentAlerts.map((alert, idx) => (
               <div
-                key={alert.alert_id}
+                key={`${alert.alert_id}-${idx}`}
                 onClick={() => onViewAlertDetail(alert)}
                 className="p-3 rounded bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer space-y-1.5 text-xs font-mono"
               >

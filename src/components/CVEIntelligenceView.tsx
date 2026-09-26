@@ -103,9 +103,9 @@ export const CVEIntelligenceView: React.FC = () => {
 
       {/* CVE Grid / Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredCves.map(cve => (
+        {filteredCves.map((cve, idx) => (
           <div
-            key={cve.cve_id}
+            key={`${cve.cve_id}-${idx}`}
             className="p-5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-3 font-mono text-xs flex flex-col justify-between"
           >
             <div className="space-y-2">

