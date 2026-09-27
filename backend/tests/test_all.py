@@ -1,8 +1,21 @@
 import unittest
 import asyncio
-from backend.app.services.detection_engine import DetectionEngine
-from backend.app.services.threat_intel import DemoThreatIntelProvider, NVDProvider
-from backend.app.services.scoring_engine import ScoringEngine, ResponseEngine
+import os
+import sys
+
+# Support running from root directory and from backend directory
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+try:
+    from app.services.detection_engine import DetectionEngine
+    from app.services.threat_intel import DemoThreatIntelProvider, NVDProvider
+    from app.services.scoring_engine import ScoringEngine, ResponseEngine
+except ImportError:
+    from backend.app.services.detection_engine import DetectionEngine
+    from backend.app.services.threat_intel import DemoThreatIntelProvider, NVDProvider
+    from backend.app.services.scoring_engine import ScoringEngine, ResponseEngine
 
 class TestPrismSecurityEngine(unittest.TestCase):
     def setUp(self):

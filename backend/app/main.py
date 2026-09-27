@@ -1,10 +1,16 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any
-from backend.app.config import settings
-from backend.app.services.detection_engine import DetectionEngine
-from backend.app.services.threat_intel import DemoThreatIntelProvider, NVDProvider
-from backend.app.services.scoring_engine import ScoringEngine, ResponseEngine
+try:
+    from app.config import settings
+    from app.services.detection_engine import DetectionEngine
+    from app.services.threat_intel import DemoThreatIntelProvider, NVDProvider
+    from app.services.scoring_engine import ScoringEngine, ResponseEngine
+except ImportError:
+    from backend.app.config import settings
+    from backend.app.services.detection_engine import DetectionEngine
+    from backend.app.services.threat_intel import DemoThreatIntelProvider, NVDProvider
+    from backend.app.services.scoring_engine import ScoringEngine, ResponseEngine
 
 app = FastAPI(
     title=settings.APP_NAME,

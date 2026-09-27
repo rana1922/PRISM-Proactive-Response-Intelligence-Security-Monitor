@@ -1,6 +1,9 @@
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON, Index
-from backend.app.models.event import Base
+try:
+    from app.models.event import Base
+except ImportError:
+    from backend.app.models.event import Base
 
 class AlertModel(Base):
     __tablename__ = "alerts"
