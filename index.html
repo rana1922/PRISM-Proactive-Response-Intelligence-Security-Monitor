@@ -9,6 +9,76 @@
     <meta property="og:description" content="Enterprise-grade SOC threat detection, attack correlation, explainable scoring, and automated simulated response platform." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Suppress Vite HMR WebSocket connection errors in sandbox/iframe preview
+      (function() {
+        function shouldSuppress(msg) {
+          if (!msg) return false;
+          var str = String(msg).toLowerCase();
+          return str.includes('websocket') || str.includes('failed to connect to websocket');
+        }
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event.reason;
+          var msg = (reason && (reason.message || reason.stack || reason)) || '';
+          if (shouldSuppress(msg)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+
+        window.addEventListener('error', function(event) {
+          var msg = (event && (event.message || (event.error && event.error.message))) || '';
+          if (shouldSuppress(msg)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+
+        // Quietly handle Vite HMR WebSocket in environments where HMR is disabled
+        var OriginalWebSocket = window.WebSocket;
+        if (OriginalWebSocket) {
+          window.WebSocket = function(url, protocols) {
+            var isViteHmr = false;
+            if (protocols === 'vite-hmr' || (Array.isArray(protocols) && protocols.indexOf('vite-hmr') !== -1)) {
+              isViteHmr = true;
+            } else if (typeof url === 'string' && (url.indexOf('vite-hmr') !== -1 || (url.indexOf(':3000') !== -1 && !url.includes('/api/')))) {
+              isViteHmr = true;
+            }
+
+            if (isViteHmr) {
+              return {
+                readyState: 3,
+                CLOSED: 3,
+                CLOSING: 2,
+                OPEN: 1,
+                CONNECTING: 0,
+                url: url,
+                protocol: 'vite-hmr',
+                extensions: '',
+                bufferedAmount: 0,
+                binaryType: 'blob',
+                onopen: null,
+                onerror: null,
+                onclose: null,
+                onmessage: null,
+                send: function() {},
+                close: function() {},
+                addEventListener: function() {},
+                removeEventListener: function() {},
+                dispatchEvent: function() { return false; }
+              };
+            }
+            return new OriginalWebSocket(url, protocols);
+          };
+          window.WebSocket.prototype = OriginalWebSocket.prototype;
+          window.WebSocket.CONNECTING = 0;
+          window.WebSocket.OPEN = 1;
+          window.WebSocket.CLOSING = 2;
+          window.WebSocket.CLOSED = 3;
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
