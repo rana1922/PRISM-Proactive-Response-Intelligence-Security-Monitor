@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 import re
+import random
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional, Set
 
@@ -1320,6 +1321,7 @@ async def stats_top_ips():
 @app.post("/api/simulator/sql-injection")
 async def sim_sqli(payload: Optional[Dict[str, Any]] = None):
     p = payload or {}
+    payload_val = p.get("payload") or "' OR '1'='1 --"
     event = {
         "event_id": gen_id("sim-sqli"),
         "source": "web_server",
@@ -1331,8 +1333,8 @@ async def sim_sqli(payload: Optional[Dict[str, Any]] = None):
         "event_type": "http_request",
         "protocol": "HTTP",
         "method": "GET",
-        "url": f"/login?id=1{p.get('payload') or '\' OR \'1\'=\'1 --'}",
-        "payload": p.get("payload") or "' OR '1'='1 --",
+        "url": f"/login?id=1{payload_val}",
+        "payload": payload_val,
         "user_agent": "sqlmap/1.7.2#stable"
     }
     return await process_security_event(event)
