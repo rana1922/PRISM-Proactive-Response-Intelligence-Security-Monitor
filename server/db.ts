@@ -148,6 +148,17 @@ class PrismDatabase {
   private initIOCs() {
     this.iocs = [
       {
+        id: 'ioc-000',
+        ioc: '203.0.113.45',
+        type: 'IP',
+        threat_level: 'high',
+        source: 'PRISM Threat Intelligence (Lab/OTX)',
+        confidence: 92,
+        last_seen: new Date(Date.now() - 1800000).toISOString(),
+        tags: ['Active Exploit Origin', 'Known Botnet', 'SQLi Scanner', 'Threat Lab IOC'],
+        description: 'Active attacker IP engaged in credential stuffing and web application exploitation.'
+      },
+      {
         id: 'ioc-001',
         ioc: '185.220.101.45',
         type: 'IP',

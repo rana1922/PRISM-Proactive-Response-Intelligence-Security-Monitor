@@ -20,6 +20,7 @@ class DemoThreatIntelProvider(ThreatIntelProvider):
 
     def __init__(self):
         self.known_ips = {
+            "203.0.113.45": {"threat_level": "high", "confidence": 92, "source": "PRISM Threat Intelligence (Lab/OTX)", "tags": ["Active Exploit Origin", "Known Botnet", "SQLi Scanner"]},
             "185.220.101.45": {"threat_level": "critical", "confidence": 94, "source": "PRISM Threat Intelligence", "tags": ["Tor Exit Node", "SQLi Scanner"]},
             "194.26.29.112": {"threat_level": "high", "confidence": 91, "source": "AlienVault OTX (Demo)", "tags": ["C2 Beacon", "RCE Origin"]},
             "45.154.255.89": {"threat_level": "high", "confidence": 89, "source": "AbuseIPDB (Demo)", "tags": ["Port Scanner", "Mirai Probe"]},
@@ -35,13 +36,30 @@ class DemoThreatIntelProvider(ThreatIntelProvider):
         }
 
     async def check_ip(self, ip: str) -> Optional[Dict[str, Any]]:
-        return self.known_ips.get(ip)
+        if not ip:
+            return None
+        ip_clean = ip.strip()
+        if ip_clean in self.known_ips:
+            return self.known_ips[ip_clean]
+        # Recognize RFC 5737 testnet / lab ranges (commonly used in security testing & demo sandboxes)
+        if ip_clean.startswith("203.0.113.") or ip_clean.startswith("198.51.100.") or ip_clean.startswith("192.0.2."):
+            return {
+                "threat_level": "high",
+                "confidence": 92,
+                "source": "PRISM Threat Intelligence (Lab Feed)",
+                "tags": ["Known Malicious Scanner", "Exploit Origin", "Threat Lab IOC"]
+            }
+        return None
 
     async def check_domain(self, domain: str) -> Optional[Dict[str, Any]]:
-        return self.known_domains.get(domain)
+        if not domain:
+            return None
+        return self.known_domains.get(domain.strip())
 
     async def check_hash(self, hash_value: str) -> Optional[Dict[str, Any]]:
-        return self.known_hashes.get(hash_value)
+        if not hash_value:
+            return None
+        return self.known_hashes.get(hash_value.strip().lower())
 
 
 class NVDProvider:
